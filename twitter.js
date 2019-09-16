@@ -53,7 +53,7 @@ getWinners(
     '@NaomiSharif94',
     '@techyrey',
     '@matthew_inamdar',
-  ])
-  .then((winners) => {
-    console.log(winners);
-  });
+  ]
+).then((winners) => {
+  console.log(winners);
+});
