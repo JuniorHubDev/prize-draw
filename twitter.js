@@ -9,34 +9,51 @@ const twitterClient = new Twitter({
   bearer_token: process.env.TWITTER_BEARER_TOKEN
 });
 
-function getWinners(number, hashtag, ignoreAccounts = []) {
-  const date = moment().tz("Europe/London").subtract(1, "day").format('YYYY-MM-DD');
+function getWinners(numberOfWinners, hours, hashtag, ignoredAccounts = []) {
+  const date = moment()
+    .tz("Europe/London")
+    .subtract(hours, "hours")
+    .format('YYYY-MM-DD');
+
   return new bluebird((resolve, reject) => {
-    twitterClient.get('search/tweets', { q: `${hashtag} since:${date}`}, function(error, tweets, response) {
-      let entrants = tweets.statuses.map(tweet => `@${tweet.user.screen_name}`).filter((name) => {
-        return ignoreAccounts.indexOf(name.toLowerCase()) === -1;
-      });
+    twitterClient.get(
+      'search/tweets',
+      { q: `${hashtag} since:${date}` },
+      function (error, tweets, response) {
+        let entrants = tweets.statuses
+          .map((tweet) => `@${tweet.user.screen_name}`)
+          .filter((name) => {
+            return ignoredAccounts
+              .map((ignoredAccount) => ignoredAccount.toLowerCase())
+              .indexOf(name.toLowerCase()) === -1;
+          });
 
-      const winners = [];
-      for (let i = 0; i < number; i++) {
-        const winner = entrants[Math.floor(Math.random()*entrants.length)];
-        winners.push(winner);
+        const winners = [];
+        for (let i = 0; i < numberOfWinners; i++) {
+          const winner = entrants[Math.floor(Math.random()*entrants.length)];
+          winners.push(winner);
 
-        entrants = entrants.filter(entrant => entrant !== winner);
+          entrants = entrants.filter(entrant => entrant !== winner);
+        }
+
+        resolve(winners);
       }
-
-      resolve(winners);
-    });
+    );
   })
 }
 
-getWinners(1, '#juniorhub', [
-  '@codefoodpixels',
-  '@leedsjs',
-  '@JuniorHubDev',
-  '@NaomiSharif94',
-  '@techyrey',
-  '@matthew_inamdar',
-]).then((winners) => {
-  console.log(winners);
-});
+getWinners(
+  process.env.NUMBER_OF_WINNERS || 1,
+  process.env.HOURS || 24,
+  process.env.HASHTAG || '#juniorhub',
+  [
+    '@codefoodpixels',
+    '@leedsjs',
+    '@JuniorHubDev',
+    '@NaomiSharif94',
+    '@techyrey',
+    '@matthew_inamdar',
+  ])
+  .then((winners) => {
+    console.log(winners);
+  });
